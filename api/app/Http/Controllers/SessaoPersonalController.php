@@ -120,7 +120,7 @@ class SessaoPersonalController extends Controller
     /**
      * Cancelar sessão
      * DELETE /api/personal-sessions/{id}
-     * 
+     *
      * Atualiza status para 'cancelada' (soft delete)
      * A reserva de quadra vinculada também é cancelada automaticamente via Service
      * A cobrança vinculada também é cancelada (se ainda não foi paga)
@@ -128,13 +128,13 @@ class SessaoPersonalController extends Controller
     public function destroy($id)
     {
         $sessao = SessaoPersonal::findOrFail($id);
-        
+
         // Verifica se tem cobrança não paga antes de cancelar
         $cobranca = Cobranca::where('referencia_tipo', 'sessao_personal')
             ->where('referencia_id', $sessao->id_sessao_personal)
             ->where('status', '!=', 'pago')
             ->first();
-        
+
         // Usar service para cancelar sessão + cobrança
         $this->service->cancelarSessaoComCobranca($sessao);
 
@@ -144,7 +144,7 @@ class SessaoPersonalController extends Controller
                 'status' => 'cancelada',
                 'cobranca_cancelada' => $cobranca ? true : false,
             ],
-            'message' => $cobranca 
+            'message' => $cobranca
                 ? 'Sessão e cobrança canceladas com sucesso'
                 : 'Sessão cancelada com sucesso',
         ], 200);
@@ -246,7 +246,7 @@ class SessaoPersonalController extends Controller
     /**
      * Minhas sessões como ALUNO (não instrutor!)
      * GET /api/personal-sessions/me (quando aluno está logado)
-     * 
+     *
      * Retorna APENAS as sessões onde o usuário é o ALUNO
      * (não as sessões que ele ministra como instrutor)
      */
@@ -286,7 +286,7 @@ class SessaoPersonalController extends Controller
     /**
      * Obter todos os horários disponíveis de um instrutor para um dia específico
      * GET /api/personal-sessions/availability/daily/{id_instrutor}?date=YYYY-MM-DD
-     * 
+     *
      * Retorna:
      * - horarios_disponiveis: Array de slots de 30min disponíveis
      * - horarios_ocupados: Array de slots já reservados
@@ -317,8 +317,8 @@ class SessaoPersonalController extends Controller
 
         $data = \Carbon\Carbon::parse($request->date)->startOfDay();
 
-        // Verificar se a data é futura (a partir de hoje)
-        if ($data->isPast()) {
+        // Verificar se a data é anterior a hoje (permitir hoje)
+        if ($data->lt(\Carbon\Carbon::today())) {
             return response()->json([
                 'message' => 'A data deve ser a partir de hoje',
                 'horarios_disponiveis' => [],
@@ -329,8 +329,9 @@ class SessaoPersonalController extends Controller
         }
 
         // 1. Buscar disponibilidade semanal do instrutor para este dia da semana
-        $diaSemana = $data->dayOfWeek; // 0 = Sunday, 1 = Monday, ... 6 = Saturday
-        
+        // Usar dayOfWeekIso (1=Segunda ... 7=Domingo) para alinhar com a tabela disponibilidade_instrutor
+        $diaSemana = $data->dayOfWeekIso;
+
         $disponibilidadeSemanal = \App\Models\DisponibilidadeInstrutor::where('id_instrutor', $id_instrutor)
             ->where('dia_semana', $diaSemana)
             ->first();

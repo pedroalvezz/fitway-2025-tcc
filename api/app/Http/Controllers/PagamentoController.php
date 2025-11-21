@@ -275,9 +275,20 @@ class PagamentoController extends Controller
         }
 
         if ($search) {
-            $query->whereHas('usuario', function ($q) use ($search) {
-                $q->where('nome', 'ILIKE', '%' . $search . '%')
-                  ->orWhere('email', 'ILIKE', '%' . $search . '%');
+            $query->where(function ($q) use ($search) {
+                // Buscar por nome ou email do usuário
+                $q->whereHas('usuario', function ($uq) use ($search) {
+                    $uq->where('nome', 'ILIKE', '%' . $search . '%')
+                       ->orWhere('email', 'ILIKE', '%' . $search . '%');
+                })
+                // Também buscar pela descrição da cobrança
+                ->orWhere('descricao', 'ILIKE', '%' . $search . '%')
+                // Caso digite um número exato, permitir bater com referencia_id
+                ->orWhere(function ($rq) use ($search) {
+                    if (is_numeric($search)) {
+                        $rq->where('referencia_id', (int) $search);
+                    }
+                });
             });
         }
 

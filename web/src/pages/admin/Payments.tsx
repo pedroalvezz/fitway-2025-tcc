@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { usersService } from '@/services/users.service';
 import type { AdminUser } from '@/types';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, parseCurrency } from '@/lib/utils';
 import { Loader2, Receipt, Search, Clock, CheckCircle, XCircle, AlertCircle, Plus, Pencil, Trash2, Link as LinkIcon, Check as CheckIcon } from 'lucide-react';
 import { debounce } from '@/lib/utils';
 
@@ -171,7 +171,7 @@ export default function AdminPaymentsPage() {
         id_usuario: String(createForm.id_usuario),
         referencia_tipo: createForm.referencia_tipo,
         referencia_id: createForm.referencia_id ? String(createForm.referencia_id) : undefined,
-        valor_total: parseFloat(createForm.valor_total),
+        valor_total: createForm.valor_total ? parseCurrency(createForm.valor_total) : 0,
         descricao: createForm.descricao,
         vencimento: createForm.vencimento,
         observacoes: createForm.observacoes || undefined,
@@ -198,7 +198,7 @@ export default function AdminPaymentsPage() {
         descricao: editForm.descricao,
         observacoes: editForm.observacoes || undefined,
       };
-      if (editForm.valor_total) payload.valor_total = parseFloat(editForm.valor_total);
+      if (editForm.valor_total) payload.valor_total = parseCurrency(editForm.valor_total);
       if (editForm.vencimento) payload.vencimento = editForm.vencimento;
       if (editForm.status) payload.status = editForm.status;
 
@@ -270,7 +270,7 @@ export default function AdminPaymentsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Nome ou email do usuário..."
+                  placeholder="Nome, email, descrição ou referência..."
                   className="pl-10"
                   onChange={(e) => handleSearch(e.target.value)}
                 />
@@ -533,9 +533,22 @@ export default function AdminPaymentsPage() {
             </div>
             <div>
               <Label>Valor (R$)</Label>
-              <Input type="number" step="0.01" min="0.01" placeholder="150.00"
+              <Input
+                placeholder="R$ 150,00"
                 value={createForm.valor_total}
-                onChange={(e) => setCreateForm({ ...createForm, valor_total: e.target.value })} />
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const digits = raw.replace(/\D/g, '');
+                  if (!digits) {
+                    setCreateForm({ ...createForm, valor_total: '' });
+                    return;
+                  }
+                  const cents = parseInt(digits, 10);
+                  const value = (cents / 100).toFixed(2);
+                  const formatted = 'R$ ' + value.replace('.', ',');
+                  setCreateForm({ ...createForm, valor_total: formatted });
+                }}
+              />
             </div>
             <div>
               <Label>Vencimento</Label>
@@ -571,8 +584,22 @@ export default function AdminPaymentsPage() {
             </div>
             <div>
               <Label>Valor (R$)</Label>
-              <Input type="number" step="0.01" min="0.01" value={editForm.valor_total}
-                onChange={(e) => setEditForm({ ...editForm, valor_total: e.target.value })} />
+              <Input
+                placeholder="R$ 150,00"
+                value={editForm.valor_total}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const digits = raw.replace(/\D/g, '');
+                  if (!digits) {
+                    setEditForm({ ...editForm, valor_total: '' });
+                    return;
+                  }
+                  const cents = parseInt(digits, 10);
+                  const value = (cents / 100).toFixed(2);
+                  const formatted = 'R$ ' + value.replace('.', ',');
+                  setEditForm({ ...editForm, valor_total: formatted });
+                }}
+              />
             </div>
             <div>
               <Label>Vencimento</Label>

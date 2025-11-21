@@ -22,7 +22,7 @@ class ReservaQuadraController extends Controller
 
     /**
      * Listar reservas de quadras com filtros
-     * 
+     *
      * GET /api/admin/court-bookings
      */
     public function index(Request $request): JsonResponse
@@ -69,8 +69,9 @@ class ReservaQuadraController extends Controller
                 'id_reserva_quadra' => (string) $reserva->id_reserva_quadra,
                 'id_quadra' => (string) $reserva->id_quadra,
                 'id_usuario' => (string) $reserva->id_usuario,
-                'inicio' => $reserva->inicio->toISOString(),
-                'fim' => $reserva->fim->toISOString(),
+                // Ajuste timezone: retornar horário local sem conversão para UTC
+                'inicio' => $reserva->inicio->format('Y-m-d\TH:i:s'),
+                'fim' => $reserva->fim->format('Y-m-d\TH:i:s'),
                 'preco_total' => (float) $reserva->preco_total,
                 'status' => $reserva->status,
                 'observacoes' => $reserva->observacoes,
@@ -96,7 +97,7 @@ class ReservaQuadraController extends Controller
 
     /**
      * Buscar reserva por ID
-     * 
+     *
      * GET /api/admin/court-bookings/{id}
      */
     public function show(string $id): JsonResponse
@@ -108,8 +109,9 @@ class ReservaQuadraController extends Controller
                 'id_reserva_quadra' => (string) $reserva->id_reserva_quadra,
                 'id_quadra' => (string) $reserva->id_quadra,
                 'id_usuario' => (string) $reserva->id_usuario,
-                'inicio' => $reserva->inicio->toISOString(),
-                'fim' => $reserva->fim->toISOString(),
+                // Ajuste timezone: retornar horário local sem conversão para UTC
+                'inicio' => $reserva->inicio->format('Y-m-d\TH:i:s'),
+                'fim' => $reserva->fim->format('Y-m-d\TH:i:s'),
                 'preco_total' => (float) $reserva->preco_total,
                 'status' => $reserva->status,
                 'observacoes' => $reserva->observacoes,
@@ -132,13 +134,13 @@ class ReservaQuadraController extends Controller
 
     /**
      * Criar nova reserva
-     * 
+     *
      * POST /api/admin/court-bookings
      */
     public function store(CreateReservaQuadraRequest $request): JsonResponse
     {
         try {
-    
+
 
             // Se for aluno (não admin), usar seu próprio ID
             $dados = $request->validated();
@@ -152,8 +154,9 @@ class ReservaQuadraController extends Controller
                     'id_reserva_quadra' => (string) $reserva->id_reserva_quadra,
                     'id_quadra' => (string) $reserva->id_quadra,
                     'id_usuario' => (string) $reserva->id_usuario,
-                    'inicio' => $reserva->inicio->toISOString(),
-                    'fim' => $reserva->fim->toISOString(),
+                    // Ajuste timezone: retornar horário local sem conversão para UTC
+                    'inicio' => $reserva->inicio->format('Y-m-d\TH:i:s'),
+                    'fim' => $reserva->fim->format('Y-m-d\TH:i:s'),
                     'preco_total' => (float) $reserva->preco_total,
                     'status' => $reserva->status,
                     'observacoes' => $reserva->observacoes,
@@ -172,7 +175,7 @@ class ReservaQuadraController extends Controller
 
     /**
      * Atualizar reserva
-     * 
+     *
      * PUT/PATCH /api/admin/court-bookings/{id}
      */
     public function update(UpdateReservaQuadraRequest $request, string $id): JsonResponse
@@ -186,8 +189,9 @@ class ReservaQuadraController extends Controller
                     'id_reserva_quadra' => (string) $reservaAtualizada->id_reserva_quadra,
                     'id_quadra' => (string) $reservaAtualizada->id_quadra,
                     'id_usuario' => (string) $reservaAtualizada->id_usuario,
-                    'inicio' => $reservaAtualizada->inicio->toISOString(),
-                    'fim' => $reservaAtualizada->fim->toISOString(),
+                    // Ajuste timezone: retornar horário local sem conversão para UTC
+                    'inicio' => $reservaAtualizada->inicio->format('Y-m-d\TH:i:s'),
+                    'fim' => $reservaAtualizada->fim->format('Y-m-d\TH:i:s'),
                     'preco_total' => (float) $reservaAtualizada->preco_total,
                     'status' => $reservaAtualizada->status,
                     'observacoes' => $reservaAtualizada->observacoes,
@@ -206,7 +210,7 @@ class ReservaQuadraController extends Controller
 
     /**
      * Cancelar reserva (soft delete)
-     * 
+     *
      * DELETE /api/admin/court-bookings/{id}
      */
     public function destroy(string $id): JsonResponse
@@ -219,7 +223,7 @@ class ReservaQuadraController extends Controller
 
     /**
      * Confirmar reserva
-     * 
+     *
      * PATCH /api/admin/court-bookings/{id}/confirm
      */
     public function confirm(string $id): JsonResponse
@@ -238,12 +242,12 @@ class ReservaQuadraController extends Controller
 
     /**
      * Verificar disponibilidade
-     * 
+     *
      * POST /api/admin/court-bookings/check-availability
      */
     /**
      * Retorna todos os horários disponíveis de um dia
-     * 
+     *
      * POST /api/court-bookings/available-slots
      * Body: { id_quadra: int, data: "YYYY-MM-DD" }
      */
@@ -281,7 +285,7 @@ class ReservaQuadraController extends Controller
 
     /**
      * Minhas reservas (usuário logado)
-     * 
+     *
      * GET /api/court-bookings/me?status=pendente
      */
     public function minhasReservas(Request $request): JsonResponse
@@ -307,8 +311,9 @@ class ReservaQuadraController extends Controller
                 'id_reserva_quadra' => (string) $reserva->id_reserva_quadra,
                 'id_quadra' => (string) $reserva->id_quadra,
                 'id_usuario' => (string) $reserva->id_usuario,
-                'inicio' => $reserva->inicio->toISOString(),
-                'fim' => $reserva->fim->toISOString(),
+                // Ajuste timezone: retornar horário local sem conversão para UTC
+                'inicio' => $reserva->inicio->format('Y-m-d\TH:i:s'),
+                'fim' => $reserva->fim->format('Y-m-d\TH:i:s'),
                 'preco_total' => (float) $reserva->preco_total,
                 'status' => $reserva->status,
                 'observacoes' => $reserva->observacoes,
@@ -327,15 +332,15 @@ class ReservaQuadraController extends Controller
 
     /**
      * Cancelar minha reserva (aluno)
-     * 
+     *
      * PATCH /api/court-bookings/{id}/cancel
-     * 
+     *
      * ✨ NOVO: Se houver cobrança NÃO PAGA, cancela também!
      */
     public function cancel(string $id): JsonResponse
     {
         $reserva = ReservaQuadra::findOrFail($id);
-        
+
         // Validar se é o próprio usuário (exceto admin)
         if (auth()->user()->papel !== 'admin' && $reserva->id_usuario != auth()->id()) {
             return response()->json([
@@ -362,7 +367,7 @@ class ReservaQuadraController extends Controller
                 'status' => 'cancelada',
                 'cobranca_cancelada' => $cobranca ? true : false,
             ],
-            'message' => $cobranca 
+            'message' => $cobranca
                 ? 'Reserva e cobrança canceladas com sucesso'
                 : 'Reserva cancelada com sucesso',
         ], 200);

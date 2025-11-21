@@ -17,6 +17,7 @@ class NotificacaoService
             'titulo' => 'Nova Cobrança',
             'mensagem' => "Você tem uma nova cobrança: {$descricao} no valor de R$ " . number_format($valor, 2, ',', '.'),
             'link' => $linkPagamento,
+            'lida' => false,
         ]);
     }
 
@@ -30,6 +31,7 @@ class NotificacaoService
             'tipo' => 'pagamento',
             'titulo' => 'Pagamento Confirmado',
             'mensagem' => "Seu pagamento de {$descricao} no valor de R$ " . number_format($valor, 2, ',', '.') . " foi confirmado!",
+            'lida' => false,
         ]);
     }
 
@@ -44,6 +46,7 @@ class NotificacaoService
             'titulo' => 'Sessão Personal Agendada',
             'mensagem' => "Sua sessão com {$instrutor} foi agendada para {$dataHora}",
             'link' => '/aluno/personal',
+            'lida' => false,
         ]);
     }
 
@@ -58,6 +61,7 @@ class NotificacaoService
             'titulo' => 'Reserva Confirmada',
             'mensagem' => "Sua reserva da quadra {$quadra} para {$dataHora} foi confirmada!",
             'link' => '/aluno/reservas',
+            'lida' => false,
         ]);
     }
 
@@ -72,6 +76,7 @@ class NotificacaoService
             'titulo' => 'Assinatura Ativada',
             'mensagem' => "Sua assinatura do plano {$plano} foi ativada com sucesso!",
             'link' => '/aluno/planos',
+            'lida' => false,
         ]);
     }
 
@@ -86,6 +91,7 @@ class NotificacaoService
             'titulo' => 'Inscrição em Aula Confirmada',
             'mensagem' => "Você foi inscrito na aula {$aula} em {$dataHora}",
             'link' => '/aluno/aulas',
+            'lida' => false,
         ]);
     }
 
@@ -100,6 +106,7 @@ class NotificacaoService
             'titulo' => $titulo,
             'mensagem' => $mensagem,
             'link' => $link,
+            'lida' => false,
         ]);
     }
 }

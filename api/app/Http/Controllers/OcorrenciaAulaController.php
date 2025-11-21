@@ -61,6 +61,21 @@ class OcorrenciaAulaController extends Controller
             $query->whereDate('inicio', '<=', $request->data_fim);
         }
 
+        // Busca textual: aula (nome, esporte, descricao) ou instrutor (nome)
+        if ($request->filled('search')) {
+            $search = mb_strtolower($request->search, 'UTF-8');
+            $query->where(function ($sub) use ($search) {
+                $sub->whereHas('aula', function ($q) use ($search) {
+                    $q->whereRaw('LOWER(nome) LIKE ?', ["%{$search}%"])
+                      ->orWhereRaw('LOWER(esporte) LIKE ?', ["%{$search}%"])
+                      ->orWhereRaw('LOWER(descricao) LIKE ?', ["%{$search}%"]);
+                })
+                ->orWhereHas('instrutor', function ($q) use ($search) {
+                    $q->whereRaw('LOWER(nome) LIKE ?', ["%{$search}%"]);
+                });
+            });
+        }
+
         $query->orderBy('inicio', 'asc');
 
         $perPage = $request->input('per_page', 50);

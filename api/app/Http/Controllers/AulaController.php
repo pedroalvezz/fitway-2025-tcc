@@ -36,9 +36,15 @@ class AulaController extends Controller
             $query->where('nivel', $request->nivel);
         }
 
-        // Busca por nome
+        // Busca abrangente (nome, esporte, nível)
         if ($request->filled('search')) {
-            $query->where('nome', 'ILIKE', '%' . $request->search . '%');
+            $term = trim($request->search);
+            $slug = str_replace(' ', '_', strtolower($term));
+            $query->where(function ($q) use ($term, $slug) {
+                $q->where('nome', 'ILIKE', '%' . $term . '%')
+                  ->orWhere('esporte', 'ILIKE', '%' . $slug . '%')
+                  ->orWhere('nivel', 'ILIKE', '%' . strtolower($term) . '%');
+            });
         }
 
         // Ordenação
@@ -128,7 +134,7 @@ class AulaController extends Controller
     public function destroy(int $id)
     {
         $aula = Aula::findOrFail($id);
-        
+
         // Soft delete: marcar como inativa
         $aula->update(['status' => 'inativa']);
 

@@ -581,22 +581,28 @@ const StudentPersonal = () => {
                   <span className="ml-2 text-white">Carregando horários...</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                  {availableSlots.map((slot) => (
-                    <button
-                      key={slot.time}
-                      onClick={() => handleSelectSlot(slot)}
-                      disabled={!slot.available}
-                      className={`py-2 px-3 rounded text-sm font-medium transition ${
-                        slot.available
-                          ? 'bg-fitway-green/20 text-fitway-green hover:bg-fitway-green/30 cursor-pointer'
-                          : 'bg-red-500/10 text-red-500/50 cursor-not-allowed'
-                      } ${selectedSlot?.time === slot.time ? 'ring-2 ring-fitway-green' : ''}`}
-                    >
-                      {slot.time}
-                    </button>
-                  ))}
-                </div>
+                availableSlots.length > 0 ? (
+                  <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                    {availableSlots.map((slot) => (
+                      <button
+                        key={slot.time}
+                        onClick={() => handleSelectSlot(slot)}
+                        disabled={!slot.available}
+                        className={`py-2 px-3 rounded text-sm font-medium transition ${
+                          slot.available
+                            ? 'bg-fitway-green/20 text-fitway-green hover:bg-fitway-green/30 cursor-pointer'
+                            : 'bg-red-500/10 text-red-500/50 cursor-not-allowed'
+                        } ${selectedSlot?.time === slot.time ? 'ring-2 ring-fitway-green' : ''}`}
+                      >
+                        {slot.time}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-white/70 border border-dashed border-dashboard-border rounded-md">
+                    Nenhum horário disponível para esta data. Escolha outra data ou tente mais tarde.
+                  </div>
+                )
               )}
             </div>
           </div>

@@ -45,17 +45,23 @@ const AdminClasses = () => {
   // Load aulas
   useEffect(() => {
     loadAulas();
-  }, [statusFilter, esporteFilter, nivelFilter]);
+  }, [statusFilter, esporteFilter, nivelFilter, searchTerm]);
 
-  const loadAulas = async () => {
+  const loadAulas = async (overrideSearch?: string) => {
     try {
       setLoading(true);
       const filters: any = {};
       
-      if (statusFilter !== 'all') filters.status = statusFilter;
+      // Sempre enviar status=all para permitir exibição de ativas + inativas
+      if (statusFilter === 'all') {
+        filters.status = 'all';
+      } else {
+        filters.status = statusFilter;
+      }
       if (esporteFilter !== 'all') filters.esporte = esporteFilter;
       if (nivelFilter !== 'all') filters.nivel = nivelFilter;
-      if (searchTerm) filters.search = searchTerm;
+      const termToUse = overrideSearch !== undefined ? overrideSearch : searchTerm;
+      if (termToUse) filters.search = termToUse;
 
       const response = await classesService.list(filters);
       setAulas(response.data);
@@ -75,7 +81,8 @@ const AdminClasses = () => {
   // Debounced search
   const handleSearch = debounce((term: string) => {
     setSearchTerm(term);
-    loadAulas();
+    // Passar termo diretamente para evitar uso de estado ainda não atualizado
+    loadAulas(term);
   }, 500);
 
   const handleDelete = async (id: string, nome: string) => {

@@ -37,12 +37,11 @@ import {
   XCircle
 } from 'lucide-react';
 
+// Lista de esportes disponível para criação/edição de quadras (removidos: tênis, futsal, basquete)
 const ESPORTES = [
   { value: 'beach_tennis', label: 'Beach Tennis' },
-  { value: 'tenis', label: 'Tênis' },
-  { value: 'futsal', label: 'Futsal' },
+  { value: 'futvolei', label: 'FutVôlei' },
   { value: 'volei', label: 'Vôlei' },
-  { value: 'basquete', label: 'Basquete' },
   { value: 'outros', label: 'Outros' },
 ];
 

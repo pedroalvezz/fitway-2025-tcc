@@ -14,8 +14,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Search, Calendar, Clock, User, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
-import { classEnrollmentsService, classOccurrencesService } from '@/services/classes.service';
-import type { OcorrenciaAula, InscricaoAula } from '@/types';
+import { classEnrollmentsService, classOccurrencesService, classesService } from '@/services/classes.service';
+import type { OcorrenciaAula, InscricaoAula, Aula } from '@/types';
 import { formatCurrency, formatDate, formatTime, getErrorMessage } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
@@ -45,6 +45,9 @@ const StudentClasses = () => {
     enrollment: null,
   });
   const [cancellingEnrollment, setCancellingEnrollment] = useState(false);
+  // Fallback: aulas base quando não há ocorrências geradas
+  const [fallbackClasses, setFallbackClasses] = useState<Aula[]>([]);
+  const [loadingFallback, setLoadingFallback] = useState(false);
 
   const loadMyEnrollments = useCallback(async () => {
     try {
@@ -75,8 +78,26 @@ const StudentClasses = () => {
           filters.data_fim = selectedDate;
         }
         
+        if (search.trim()) {
+          filters.search = search.trim();
+        }
         const { data } = await classOccurrencesService.listForStudent(filters);
         setOccurrences(data);
+        // Se não há ocorrências e não há filtro de data, buscar aulas base públicas (ativas)
+        if (!selectedDate && data.length === 0) {
+          try {
+            setLoadingFallback(true);
+            const publicClasses = await classesService.list({ status: 'ativa', per_page: 100 });
+            setFallbackClasses(publicClasses.data || []);
+          } catch (e) {
+            // Silenciar erro de fallback
+          } finally {
+            setLoadingFallback(false);
+          }
+        } else if (selectedDate) {
+          // Limpa fallback se usuário filtra por data
+          setFallbackClasses([]);
+        }
       } catch (err: any) {
         setError(getErrorMessage(err));
       } finally {
@@ -84,22 +105,44 @@ const StudentClasses = () => {
       }
     };
     load();
-  }, [selectedDate]);
+  }, [selectedDate, search]);
 
   useEffect(() => {
     loadMyEnrollments();
   }, [loadMyEnrollments]);
 
+  // Deduplicação adicional de salvaguarda (caso backend retorne duplicado em algum cenário)
+  const dedupedOccurrences = useMemo(() => {
+    const map = new Map<string, OcorrenciaAula>();
+    occurrences.forEach(o => {
+      if (!map.has(o.id_ocorrencia_aula)) {
+        map.set(o.id_ocorrencia_aula, o);
+      }
+    });
+    return Array.from(map.values());
+  }, [occurrences]);
+
   const filteredOccurrences = useMemo(() => {
-    if (!search.trim()) return occurrences;
+    if (!search.trim()) return dedupedOccurrences;
     const term = search.toLowerCase();
-    return occurrences.filter((o) => {
+    return dedupedOccurrences.filter((o) => {
       const aulaNome = o.aula?.nome?.toLowerCase() || '';
       const esporte = o.aula?.esporte?.toLowerCase() || '';
       const instrutor = (o as any).instrutor?.nome?.toLowerCase?.() || '';
-      return aulaNome.includes(term) || esporte.includes(term) || instrutor.includes(term);
+      const descricao = o.aula?.descricao?.toLowerCase() || '';
+      return aulaNome.includes(term) || esporte.includes(term) || instrutor.includes(term) || descricao.includes(term);
     });
-  }, [occurrences, search]);
+  }, [dedupedOccurrences, search]);
+
+  const filteredFallbackClasses = useMemo(() => {
+    if (!search.trim()) return fallbackClasses;
+    const term = search.toLowerCase();
+    return fallbackClasses.filter(a => (
+      a.nome.toLowerCase().includes(term) ||
+      a.esporte.toLowerCase().includes(term) ||
+      (a.descricao?.toLowerCase() || '').includes(term)
+    ))
+  }, [fallbackClasses, search]);
 
   const enrollmentByOccurrence = useMemo(() => {
     const map: Record<string, InscricaoAula> = {};
@@ -413,9 +456,47 @@ Acesse "Pagamentos" para concluir o pagamento.`,
               </Card>
             );
           })}
+          {/* Fallback: mostrar aulas base quando não existem ocorrências */}
+          {!loading && filteredOccurrences.length === 0 && !selectedDate && !loadingFallback && filteredFallbackClasses.length > 0 && filteredFallbackClasses.map((aula) => (
+            <Card key={`aula-${aula.id_aula}`} className="bg-dashboard-card border-dashboard-border opacity-80">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-white text-lg">{aula.nome}</CardTitle>
+                    <p className="text-white/60 mt-1">{aula.esporte}</p>
+                  </div>
+                  {aula.nivel && (
+                    <Badge variant="outline" className={`text-xs ${getLevelColor(aula.nivel)}`}>{getLevelText(aula.nivel)}</Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {aula.descricao && <p className="text-white/80 text-sm">{aula.descricao}</p>}
+                  <div className="p-3 border border-yellow-500/40 bg-yellow-500/10 rounded-md text-sm text-yellow-200">
+                    Nenhuma ocorrência futura gerada ainda para esta aula.
+                    <br /> Aguarde geração de agenda ou contate o administrador.
+                  </div>
+                  <div className="flex justify-between items-center pt-2">
+                    <div>
+                      {aula.preco_unitario ? (
+                        <>
+                          <span className="text-fitway-green font-bold text-lg">{formatCurrency(aula.preco_unitario)}</span>
+                          <span className="text-white/60 text-sm ml-1">/aula</span>
+                        </>
+                      ) : (
+                        <span className="text-white/70 text-sm">Incluso no plano</span>
+                      )}
+                    </div>
+                    <Button disabled className="bg-fitway-green/40 cursor-not-allowed text-white/70">Inscrever-se</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
           </div>
         </div>
-        {!loading && filteredOccurrences.length === 0 && (
+        {!loading && filteredOccurrences.length === 0 && filteredFallbackClasses.length === 0 && (
           <Card className="bg-dashboard-card border-dashboard-border">
             <CardContent className="text-center py-12">
               <BookOpen className="h-16 w-16 text-white/50 mx-auto mb-4" />

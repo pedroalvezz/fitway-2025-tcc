@@ -185,14 +185,24 @@ class ClassOccurrencesService {
     data_inicio?: string; // YYYY-MM-DD
     data_fim?: string; // YYYY-MM-DD
     per_page?: number;
+    search?: string;
   }) {
     const response = await apiClient.get<{ data: any[]; meta?: any }>(
       '/classes/occurrences',
       filters
     );
-
+    // Normaliza e remove duplicações (mesma ocorrência retornando múltiplas vezes por joins)
+    const normalized = (response.data || []).map(normalizeOcorrenciaAula);
+    const seen = new Set<string>();
+    const unique: OcorrenciaAula[] = [];
+    for (const occ of normalized) {
+      if (!seen.has(occ.id_ocorrencia_aula)) {
+        seen.add(occ.id_ocorrencia_aula);
+        unique.push(occ);
+      }
+    }
     return {
-      data: (response.data || []).map(normalizeOcorrenciaAula),
+      data: unique,
       meta: (response as any).meta,
     };
   }

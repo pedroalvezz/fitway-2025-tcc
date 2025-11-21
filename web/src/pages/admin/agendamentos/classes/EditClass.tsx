@@ -11,6 +11,7 @@ import { classesService } from '@/services/classes.service';
 import { ApiError } from '@/lib/api-client';
 import type { AulaFormData } from '@/types';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { maskCurrency, parseCurrency, formatCurrency } from '@/lib/utils';
 
 const EditClass = () => {
   const navigate = useNavigate();
@@ -31,6 +32,26 @@ const EditClass = () => {
     requisitos: '',
     status: 'ativa',
   });
+  const [priceInput, setPriceInput] = useState('');
+
+  const syncPriceFromData = (value?: number) => {
+    if (!value) {
+      setPriceInput('');
+      return;
+    }
+    setPriceInput(formatCurrency(value));
+  };
+
+  const handlePriceChange = (raw: string) => {
+    if (!raw) {
+      setPriceInput('');
+      setFormData(prev => ({ ...prev, preco_unitario: undefined }));
+      return;
+    }
+    const masked = maskCurrency(raw);
+    setPriceInput(masked);
+    setFormData(prev => ({ ...prev, preco_unitario: parseCurrency(masked) }));
+  };
 
   useEffect(() => {
     if (id) {
@@ -54,6 +75,7 @@ const EditClass = () => {
         requisitos: aula.requisitos || '',
         status: aula.status,
       });
+      syncPriceFromData(aula.preco_unitario || undefined);
     } catch (error) {
       if (error instanceof ApiError) {
         toast({
@@ -208,12 +230,13 @@ const EditClass = () => {
               <Label htmlFor="preco_unitario" className="text-white">Preço Unitário (R$)</Label>
               <Input
                 id="preco_unitario"
-                type="number"
-                step="0.01"
-                value={formData.preco_unitario || ''}
-                onChange={(e) => setFormData({ ...formData, preco_unitario: e.target.value ? Number(e.target.value) : undefined })}
-                className="bg-dashboard-bg border-dashboard-border text-white"
+                type="text"
+                inputMode="numeric"
                 placeholder="Deixe vazio se incluso no plano"
+                value={priceInput}
+                onChange={(e) => handlePriceChange(e.target.value)}
+                onBlur={() => syncPriceFromData(formData.preco_unitario)}
+                className="bg-dashboard-bg border-dashboard-border text-white"
               />
             </div>
 

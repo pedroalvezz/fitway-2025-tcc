@@ -73,8 +73,15 @@ const StudentCourts = () => {
   }, []);
 
   const sports = useMemo(() => {
+    // Coletar esportes existentes das quadras
     const values = courts.map(court => court.esporte).filter(Boolean);
-    return Array.from(new Set(values));
+    const set = new Set(values);
+    // Remover esportes desativados do filtro
+    ['tenis','futsal','basquete'].forEach(r => set.delete(r));
+    // Garantir inclusão das novas modalidades
+    set.add('futvolei');
+    set.add('volei');
+    return Array.from(set);
   }, [courts]);
 
   const minCourtPrice = useMemo(() => {
@@ -171,16 +178,20 @@ const StudentCourts = () => {
 
     try {
       setBooking(true);
-      const inicio = `${selectedDate}T${time}:00.000Z`;
-      const fim = new Date(new Date(inicio).getTime() + 60 * 60 * 1000).toISOString();
-      const currentUser = await authService.getCurrentUser();
-
-      await courtBookingsService.create({
-        id_quadra: Number(court.id_quadra),
-        id_usuario: parseInt(currentUser.id, 10),
-        inicio,
-        fim,
-      });
+        // Backend exige formato exato: Y-m-dTH:i:s (sem milissegundos / timezone)
+        const inicio = `${selectedDate}T${time}:00`;
+        // Calcular fim adicionando 60 minutos
+        const startDateObj = new Date(`${selectedDate}T${time}:00`);
+        startDateObj.setMinutes(startDateObj.getMinutes() + 60);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const fim = `${startDateObj.getFullYear()}-${pad(startDateObj.getMonth() + 1)}-${pad(startDateObj.getDate())}T${pad(startDateObj.getHours())}:${pad(startDateObj.getMinutes())}:${pad(startDateObj.getSeconds())}`;
+        const currentUser = await authService.getCurrentUser();
+        await courtBookingsService.create({
+          id_quadra: Number(court.id_quadra),
+          id_usuario: Number(currentUser.id),
+          inicio,
+          fim,
+        });
 
       toast({
         title: 'Reserva confirmada!',
