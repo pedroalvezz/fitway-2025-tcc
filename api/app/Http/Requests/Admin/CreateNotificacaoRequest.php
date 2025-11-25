@@ -21,7 +21,9 @@ class CreateNotificacaoRequest extends FormRequest
             'tipo'       => 'required|string|in:cobranca,pagamento,sessao,reserva,aula,assinatura,sistema',
             'titulo'     => 'required|string|max:100',
             'mensagem'   => 'required|string|max:500',
-            'link'       => 'nullable|string|max:255',
+            // For security and UX, only allow internal app routes as links.
+            // Require links to be internal paths starting with a known prefix (e.g. /aluno/, /admin/, /instrutor/)
+            'link'       => ['nullable', 'string', 'max:255', 'regex:/^(\/(aluno|admin|instrutor)\/[A-Za-z0-9\-\/\_\?\=\&]*)$/'],
         ];
     }
 

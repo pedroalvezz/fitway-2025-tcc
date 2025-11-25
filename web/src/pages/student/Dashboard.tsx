@@ -27,6 +27,18 @@ const StudentDashboard = () => {
     loadDashboard();
   }, []);
 
+  // Listen for app-level data updates (e.g., enrollment changes) and refresh
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (!e || !e.detail) return;
+      if (e.detail.type === 'enrollment') {
+        loadDashboard();
+      }
+    };
+    window.addEventListener('app:data-updated', handler as EventListener);
+    return () => window.removeEventListener('app:data-updated', handler as EventListener);
+  }, []);
+
   const loadDashboard = async () => {
     try {
       setLoading(true);

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/lib/utils';
 import { Bell, Send, Loader2, Users } from 'lucide-react';
 
 const tiposNotificacao = [
@@ -39,10 +40,36 @@ export default function AdminNotifications() {
     mensagem: '',
     link: '',
   });
+  const [destino, setDestino] = useState<string>('none');
+  
 
   useEffect(() => {
     loadUsers();
   }, []);
+
+  function buildLink(dest: string) {
+    if (!dest || dest === 'none') return '';
+    switch (dest) {
+      // Some destinations require a specific resource id (checkout, aula detail).
+      // We no longer accept an explicit Destino ID in the UI — leave those empty
+      // so the backend can auto-generate a safe internal link based on the
+      // created notification id when appropriate.
+      case 'checkout':
+        return '';
+      case 'pagamentos':
+        return '/aluno/pagamentos';
+      case 'planos':
+        return '/aluno/planos';
+      case 'aulas':
+        return '/aluno/aulas';
+      case 'personal':
+        return '/aluno/personal';
+      case 'reservas':
+        return '/aluno/reservas';
+      default:
+        return '';
+    }
+  }
 
   const loadUsers = async () => {
     try {
@@ -90,7 +117,7 @@ export default function AdminNotifications() {
     } catch (error: any) {
       toast({
         title: 'Erro ao enviar notificação',
-        description: error.message,
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     } finally {
@@ -219,14 +246,37 @@ export default function AdminNotifications() {
             {/* Link (opcional) */}
             <div className="space-y-2">
               <Label htmlFor="link">Link de Redirecionamento (opcional)</Label>
-              <Input
-                id="link"
-                value={formData.link}
-                onChange={(e) => handleChange('link', e.target.value)}
-                placeholder="Ex: /aluno/planos ou /aluno/pagamentos"
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Destino</Label>
+                  <Select value={destino} onValueChange={(v) => {
+                    setDestino(v);
+                    // build link when changing destination
+                    const link = buildLink(v);
+                    setFormData(prev => ({ ...prev, link } as any));
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Manual / Nenhum</SelectItem>
+                      <SelectItem value="checkout">Checkout (pagamento)</SelectItem>
+                      <SelectItem value="pagamentos">Pagamentos</SelectItem>
+                      <SelectItem value="planos">Planos</SelectItem>
+                      <SelectItem value="aulas">Aulas</SelectItem>
+                      <SelectItem value="personal">Sessões Personal</SelectItem>
+                      <SelectItem value="reservas">Reservas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-xs">Link Gerado</Label>
+                  <Input value={formData.link || ''} readOnly />
+                </div>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Se informado, ao clicar na notificação o usuário será redirecionado
+                O sistema irá gerar um link interno válido com base no destino. Para destinos que precisam de um recurso específico (ex: checkout, detalhes de aula), deixe o destino selecionado e o campo ficará vazio — o backend irá gerar o link seguro automaticamente.
               </p>
             </div>
 

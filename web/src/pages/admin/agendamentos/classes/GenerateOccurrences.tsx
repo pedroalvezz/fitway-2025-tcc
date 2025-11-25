@@ -260,7 +260,8 @@ const GenerateOccurrences = () => {
               </AlertDescription>
             </Alert>
 
-            {aula && aula.horarios_count === 0 && (
+            {/* Alerta caso a aula não tenha horários configurados */}
+            {aula && ((aula.horarios_count !== undefined && aula.horarios_count === 0) || (!aula.horarios || aula.horarios.length === 0)) && (
               <Alert className="mb-6 bg-yellow-500/10 border-yellow-500/30 text-yellow-200">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
@@ -319,8 +320,17 @@ const GenerateOccurrences = () => {
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-fitway-green hover:bg-fitway-green/90 text-white"
-                  disabled={generating || aula?.horarios_count === 0}
+                  className="bg-fitway-green hover:bg-fitway-green/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={
+                    generating ||
+                    !aula ||
+                    ((aula.horarios_count !== undefined && aula.horarios_count === 0) || (!aula.horarios || aula.horarios.length === 0))
+                  }
+                  title={
+                    (aula && (aula.horarios_count === 0 || !aula.horarios || aula.horarios.length === 0))
+                      ? 'Configure ao menos um horário semanal antes de gerar ocorrências.'
+                      : undefined
+                  }
                 >
                   {generating ? (
                     <>

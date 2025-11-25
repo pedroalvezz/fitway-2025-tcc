@@ -108,24 +108,26 @@ class InscricaoAulaController extends Controller
                         'status' => 'inscrito',
                     ]);
                 }
-
-                // 2. ✅ Gerar cobrança
-                $descricao = sprintf(
-                    'Aula: %s - %s',
-                    $ocorrencia->aula->nome,
-                    $ocorrencia->inicio->format('d/m/Y H:i')
-                );
-
-                $cobranca = $pagamentoService->criarCobranca(
-                    idUsuario: $idUsuario,
-                    tipo: 'inscricao_aula',
-                    idReferencia: $inscricao->id_inscricao_aula,
-                    valor: $ocorrencia->aula->preco_unitario,
-                    descricao: $descricao,
-                    vencimento: now()->addDays(7) // Vence em 7 dias
-                );
-
                 $inscricao->load(['aula', 'ocorrencia']);
+
+                // 2. ✅ Gerar cobrança SOMENTE se a aula possuir preço (não incluída no plano)
+                $cobranca = null;
+                if (!is_null($ocorrencia->aula->preco_unitario) && (float)$ocorrencia->aula->preco_unitario > 0) {
+                    $descricao = sprintf(
+                        'Aula: %s - %s',
+                        $ocorrencia->aula->nome,
+                        $ocorrencia->inicio->format('d/m/Y H:i')
+                    );
+
+                    $cobranca = $pagamentoService->criarCobranca(
+                        idUsuario: $idUsuario,
+                        tipo: 'inscricao_aula',
+                        idReferencia: $inscricao->id_inscricao_aula,
+                        valor: (float)$ocorrencia->aula->preco_unitario,
+                        descricao: $descricao,
+                        vencimento: now()->addDays(7) // Vence em 7 dias
+                    );
+                }
 
                 return [
                     'inscricao' => $inscricao,
@@ -133,19 +135,25 @@ class InscricaoAulaController extends Controller
                 ];
             });
 
-            $mensagem = ($inscricaoExistente && $inscricaoExistente->status === 'cancelado')
-                ? 'Inscrição reativada com sucesso. Uma cobrança foi gerada.'
-                : 'Inscrição realizada com sucesso. Uma cobrança foi gerada.';
+            if ($result['cobranca']) {
+                $mensagem = ($inscricaoExistente && $inscricaoExistente->status === 'cancelado')
+                    ? 'Inscrição reativada com sucesso. Uma cobrança foi gerada.'
+                    : 'Inscrição realizada com sucesso. Uma cobrança foi gerada.';
+            } else {
+                $mensagem = ($inscricaoExistente && $inscricaoExistente->status === 'cancelado')
+                    ? 'Inscrição reativada (sem cobrança - incluída no plano).'
+                    : 'Inscrição realizada (sem cobrança - incluída no plano).';
+            }
 
             return response()->json([
                 'message' => $mensagem,
                 'data' => $result['inscricao'],
-                'cobranca' => [
+                'cobranca' => $result['cobranca'] ? [
                     'id' => $result['cobranca']->id_cobranca,
                     'valor' => $result['cobranca']->valor_total,
                     'vencimento' => $result['cobranca']->vencimento->format('Y-m-d'),
                     'status' => $result['cobranca']->status,
-                ],
+                ] : null,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
@@ -157,7 +165,7 @@ class InscricaoAulaController extends Controller
     /**
      * Cancelar inscrição
      * DELETE /api/class-enrollments/{id}
-     * 
+     *
      * ✨ NOVO: Se houver cobrança NÃO PAGA, cancela também!
      */
     public function cancelar(int $id)
@@ -200,7 +208,7 @@ class InscricaoAulaController extends Controller
                 'status' => 'cancelado',
                 'cobranca_cancelada' => $cobranca ? true : false,
             ],
-            'message' => $cobranca 
+            'message' => $cobranca
                 ? 'Inscrição e cobrança canceladas com sucesso'
                 : 'Inscrição cancelada com sucesso',
         ], 200);
@@ -369,7 +377,7 @@ class InscricaoAulaController extends Controller
             $inscritosIds = InscricaoAula::where('id_ocorrencia_aula', $occurrenceId)
                 ->where('status', 'inscrito')
                 ->pluck('id_usuario');
-            
+
             $query->whereNotIn('id_usuario', $inscritosIds);
         }
 

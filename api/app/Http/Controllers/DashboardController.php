@@ -62,8 +62,9 @@ class DashboardController extends Controller
             ->where('status', 'ativa')
             ->count();
 
+        // Contagem de inscrições ativas: usar o status real 'inscrito'
         $inscricoesAtivas = DB::table('inscricoes_aula')
-            ->where('status', 'ativa')
+            ->where('status', 'inscrito')
             ->count();
 
         // Receita do mês (pagamentos aprovados)
@@ -173,9 +174,10 @@ class DashboardController extends Controller
             ->count();
 
         // Minhas inscrições em aulas
+        // Contar inscrições do usuário que estão ativas (status 'inscrito')
         $minhasInscricoes = DB::table('inscricoes_aula')
             ->where('id_usuario', $usuario->id_usuario)
-            ->where('status', 'ativa')
+            ->where('status', 'inscrito')
             ->count();
 
         // Minha assinatura

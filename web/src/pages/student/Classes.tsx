@@ -107,6 +107,25 @@ const StudentClasses = () => {
     load();
   }, [selectedDate, search]);
 
+  // helper to reload occurrences using current filters (used after enroll/cancel)
+  const reloadOccurrences = async () => {
+    try {
+      setLoading(true);
+      const filters: any = {};
+      if (selectedDate) {
+        filters.data_inicio = selectedDate;
+        filters.data_fim = selectedDate;
+      }
+      if (search.trim()) filters.search = search.trim();
+      const { data } = await classOccurrencesService.listForStudent(filters);
+      setOccurrences(data);
+    } catch (e) {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadMyEnrollments();
   }, [loadMyEnrollments]);
@@ -237,7 +256,12 @@ Acesse "Pagamentos" para concluir o pagamento.`,
         const filtered = prev.filter((enrollment) => enrollment.id_inscricao_aula !== inscricao.id_inscricao_aula);
         return [inscricao, ...filtered];
       });
+      // Refresh server-side enrollments and occurrences to keep counts consistent
       await loadMyEnrollments();
+      await reloadOccurrences();
+
+      // Notify other pages (dashboard) to refresh
+      try { window.dispatchEvent(new CustomEvent('app:data-updated', { detail: { type: 'enrollment' } })); } catch (e) {}
     } catch (err: any) {
       toast({
         title: 'Erro ao inscrever',
@@ -274,7 +298,11 @@ Acesse "Pagamentos" para concluir o pagamento.`,
       ));
 
       handleCloseCancelDialog();
+      // Refresh server data
       await loadMyEnrollments();
+      await reloadOccurrences();
+
+      try { window.dispatchEvent(new CustomEvent('app:data-updated', { detail: { type: 'enrollment' } })); } catch (e) {}
     } catch (err: any) {
       toast({
         title: 'Erro ao cancelar inscrição',

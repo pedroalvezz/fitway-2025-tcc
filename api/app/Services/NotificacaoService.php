@@ -100,7 +100,7 @@ class NotificacaoService
      */
     public function criar(int $idUsuario, string $tipo, string $titulo, string $mensagem, ?string $link = null): Notificacao
     {
-        return Notificacao::create([
+        $notificacao = Notificacao::create([
             'id_usuario' => $idUsuario,
             'tipo' => $tipo,
             'titulo' => $titulo,
@@ -108,5 +108,41 @@ class NotificacaoService
             'link' => $link,
             'lida' => false,
         ]);
+
+        // Se o link não foi informado, gerar um link interno válido usando o id da notificação
+        // para destinos que se beneficiam de um identificador sequencial (ex: checkout, aula)
+        if (empty($link)) {
+            $generated = null;
+            switch ($tipo) {
+                case 'cobranca':
+                    $generated = sprintf('/aluno/checkout/%s', $notificacao->id_notificacao);
+                    break;
+                case 'aula':
+                    $generated = sprintf('/aluno/aulas/%s', $notificacao->id_notificacao);
+                    break;
+                case 'pagamento':
+                    // Pagamentos go to payments list
+                    $generated = '/aluno/pagamentos';
+                    break;
+                case 'sessao':
+                    $generated = '/aluno/personal';
+                    break;
+                case 'reserva':
+                    $generated = '/aluno/reservas';
+                    break;
+                case 'assinatura':
+                    $generated = '/aluno/planos';
+                    break;
+                default:
+                    $generated = null;
+            }
+
+            if ($generated) {
+                $notificacao->link = $generated;
+                $notificacao->save();
+            }
+        }
+
+        return $notificacao;
     }
 }

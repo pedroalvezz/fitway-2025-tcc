@@ -45,9 +45,10 @@ class PublicController extends Controller
                     'id_plano', 'nome', 'preco', 'ciclo_cobranca', 'max_reservas_futuras', 'beneficios_json', 'status'
                 ]);
 
-            // Sinaliza o(s) mais popular(es) com base no maior contador
+            // Sinaliza "mais popular" apenas se houver um único líder estrito (>0)
             $max = $planos->max('subscriptions_count') ?? 0;
-            $data = $planos->map(function ($plano) use ($max) {
+            $leadersCount = $max > 0 ? $planos->where('subscriptions_count', $max)->count() : 0;
+            $data = $planos->map(function ($plano) use ($max, $leadersCount) {
                 return [
                     'id_plano' => $plano->id_plano,
                     'nome' => $plano->nome,
@@ -57,7 +58,7 @@ class PublicController extends Controller
                     'beneficios_json' => is_array($plano->beneficios_json) ? $plano->beneficios_json : json_decode($plano->beneficios_json, true),
                     'status' => $plano->status,
                     'subscriptions_count' => (int) ($plano->subscriptions_count ?? 0),
-                    'is_popular' => ($plano->subscriptions_count ?? 0) > 0 && (int)$plano->subscriptions_count === (int)$max,
+                    'is_popular' => $max > 0 && $leadersCount === 1 && (int)$plano->subscriptions_count === (int)$max,
                 ];
             });
 

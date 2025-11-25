@@ -48,6 +48,17 @@ const Reports = () => {
     }
   };
 
+  function isEndBeforeStart(start?: string, end?: string) {
+    if (!start || !end) return false;
+    try {
+      const s = new Date(start);
+      const e = new Date(end);
+      return e.getTime() < s.getTime();
+    } catch (err) {
+      return false;
+    }
+  }
+
   const handleExportCsv = () => {
     const rows = data[activeDataset] || [];
     exportToCsv(rows, `relatorio_${activeDataset}`);
@@ -99,12 +110,28 @@ const Reports = () => {
             <div>
               <label className="text-xs text-white/70">Data Início</label>
               <Input type="date" className="bg-dashboard-card border-dashboard-border text-white" value={filters.data_inicio || ''}
-                onChange={(e) => setFilters(f => ({ ...f, data_inicio: e.target.value || undefined }))} />
+                onChange={(e) => {
+                  const newStart = e.target.value || undefined;
+                  // If end exists and would be before the new start, block and show error
+                  if (isEndBeforeStart(newStart, filters.data_fim)) {
+                    toast({ title: 'Data inválida', description: 'A data fim não pode ser anterior à data início.', variant: 'destructive' });
+                    return;
+                  }
+                  setFilters(f => ({ ...f, data_inicio: newStart }));
+                }} />
             </div>
             <div>
               <label className="text-xs text-white/70">Data Fim</label>
               <Input type="date" className="bg-dashboard-card border-dashboard-border text-white" value={filters.data_fim || ''}
-                onChange={(e) => setFilters(f => ({ ...f, data_fim: e.target.value || undefined }))} />
+                onChange={(e) => {
+                  const newEnd = e.target.value || undefined;
+                  // If start exists and new end is before start, block and show error
+                  if (isEndBeforeStart(filters.data_inicio, newEnd)) {
+                    toast({ title: 'Data inválida', description: 'A data fim não pode ser anterior à data início.', variant: 'destructive' });
+                    return;
+                  }
+                  setFilters(f => ({ ...f, data_fim: newEnd }));
+                }} />
             </div>
             <div>
               <label className="text-xs text-white/70">Esporte</label>
@@ -197,8 +224,8 @@ const Reports = () => {
                 <thead>
                   <tr>
                     {datasetColumns.map((c) => (
-                      <th key={c} className="text-left text-white/70 px-2 py-1 border-b border-dashboard-border">{c}</th>
-                    ))}
+                          <th key={c} className="text-left text-white/70 px-2 py-1 border-b border-dashboard-border">{String(c).replace(/_/g, ' ').toUpperCase()}</th>
+                        ))}
                   </tr>
                 </thead>
                 <tbody>

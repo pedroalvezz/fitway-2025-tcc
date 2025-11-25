@@ -96,8 +96,9 @@ class AulaController extends Controller
      */
     public function show(int $id)
     {
+        // Inclui contagem de horários para permitir bloqueio de geração de ocorrências no frontend
         $aula = Aula::with(['horarios.instrutor', 'horarios.quadra'])
-            ->withCount(['ocorrencias', 'inscricoes'])
+            ->withCount(['horarios', 'ocorrencias', 'inscricoes'])
             ->findOrFail($id);
 
         return response()->json(['data' => $aula], 200);

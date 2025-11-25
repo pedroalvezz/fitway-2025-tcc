@@ -23,7 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { usersService } from '@/services/users.service';
 import { AdminUser, UserFormData } from '@/types';
-import { formatCPF, formatPhone, formatDate, getErrorMessage, maskCPF, maskPhone, sanitizeNameInput, stripNonDigits } from '@/lib/utils';
+import { formatCPF, formatPhone, formatDate, getErrorMessage, maskCPF, maskPhone, sanitizeNameInput, stripNonDigits, isValidEmail } from '@/lib/utils';
 import { 
   Plus, 
   Search, 
@@ -166,6 +166,16 @@ const AdminUsers = () => {
 
   const handleCreate = async () => {
     try {
+      // Client-side validation: email format
+      if (!formData.email || !isValidEmail(formData.email)) {
+        toast({
+          title: 'Email inválido',
+          description: 'Informe um endereço de email válido (ex: nome@dominio.com).',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       setSubmitting(true);
       const payload = buildUserPayload();
       await usersService.createUser(payload);

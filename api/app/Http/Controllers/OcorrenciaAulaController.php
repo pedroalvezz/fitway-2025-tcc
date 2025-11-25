@@ -115,10 +115,11 @@ class OcorrenciaAulaController extends Controller
                 'data' => $resultado['ocorrencias'],
             ], 201);
         } catch (\Exception $e) {
+            // Propaga motivo real (ex.: "Aula não possui horários configurados") para UX mais clara
             return response()->json([
-                'message' => 'Erro ao gerar ocorrências',
-                'error' => $e->getMessage(),
-            ], 400);
+                'message' => $e->getMessage(),
+                'code' => 'GENERATION_ERROR'
+            ], 422);
         }
     }
 
